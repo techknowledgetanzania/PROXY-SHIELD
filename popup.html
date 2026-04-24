@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProxyShield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design System ─────────────────────────────────────── */
+    :root {
+      --bg:          #0a0c10;
+      --surface:     #111318;
+      --surface2:    #181c24;
+      --border:      #1e2330;
+      --border2:     #2a3045;
+      --accent:      #00c896;
+      --accent-dim:  #00c89620;
+      --accent-glow: #00c89640;
+      --danger:      #ff4757;
+      --warn:        #ffa502;
+      --text:        #e8eaf0;
+      --text-muted:  #6b7590;
+      --text-dim:    #3d4560;
+      --mono:        'JetBrains Mono', monospace;
+      --sans:        'Space Grotesk', sans-serif;
+      --radius:      8px;
+      --radius-lg:   14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      width: 380px;
+      min-height: 520px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 20px;
+      width: 40px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+
+    .brand-tag {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    /* ── Toggle Switch ─────────────────────────────────────── */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle input { display: none; }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toggle input:checked ~ .toggle-track {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .toggle input:checked ~ .toggle-track .toggle-thumb {
+      left: 23px;
+      background: var(--accent);
+    }
+
+    /* ── Status Bar ────────────────────────────────────────── */
+    .status-bar {
+      margin: 16px 20px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .status-bar.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .status-bar.error {
+      border-color: var(--danger);
+      background: #ff475710;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+
+    .status-bar.active .status-dot {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    .status-bar.error .status-dot { background: var(--danger); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+
+    .status-bar.active .status-text { color: var(--accent); }
+
+    /* ── Section ───────────────────────────────────────────── */
+    .section {
+      padding: 0 20px 16px;
+    }
+
+    .section-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Proxy Type Selector ───────────────────────────────── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .type-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 4px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: center;
+    }
+
+    .type-btn:hover {
+      border-color: var(--border2);
+      color: var(--text);
+    }
+
+    .type-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Form Fields ───────────────────────────────────────── */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .field-row.single { grid-template-columns: 1fr; }
+    .field-row.half { grid-template-columns: 1fr 1fr; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .field input, .field select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 11px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.18s;
+      width: 100%;
+    }
+
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+    }
+
+    .field input::placeholder { color: var(--text-dim); }
+
+    .field select option {
+      background: var(--surface2);
+    }
+
+    .port-field {
+      width: 90px;
+    }
+
+    /* ── Divider ───────────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 10px;
+    }
+
+    .divider span {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Leak Prevention Toggles ───────────────────────────── */
+    .leak-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .leak-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 11px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .leak-item:hover { border-color: var(--border2); }
+
+    .leak-item.enabled {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .leak-info { flex: 1; }
+
+    .leak-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .leak-desc {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .leak-check {
+      width: 14px;
+      height: 14px;
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      transition: all 0.18s;
+    }
+
+    .leak-item.enabled .leak-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg);
+    }
+
+    /* ── Action Buttons ────────────────────────────────────── */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 20px 20px;
+    }
+
+    .btn {
+      padding: 10px;
+      border-radius: var(--radius);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      background: #00e0ab;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text-muted);
+      border: 1px solid var(--border2);
+    }
+
+    .btn-secondary:hover {
+      color: var(--text);
+      border-color: var(--border2);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 100;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--accent); color: var(--accent); }
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Options link ──────────────────────────────────────── */
+    .footer {
+      padding: 0 20px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer a {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+
+    .footer a:hover { color: var(--accent); }
+
+    .version-tag {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">🛡</div>
+      <div>
+        <div class="brand-name">ProxyShield</div>
+        <div class="brand-tag">DNS Leak Protected</div>
+      </div>
+    </div>
+    <div class="toggle-wrap">
+      <span class="toggle-label" id="toggle-state-label">OFF</span>
+      <label class="toggle">
+        <input type="checkbox" id="master-toggle" />
+        <div class="toggle-track">
+          <div class="toggle-thumb"></div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar" id="status-bar">
+    <div class="status-dot"></div>
+    <span class="status-text" id="status-text">No proxy configured</span>
+  </div>
+
+  <!-- Proxy Type -->
+  <div class="section">
+    <div class="section-label">Protocol</div>
+    <div class="type-grid">
+      <button class="type-btn active" data-type="http">HTTP</button>
+      <button class="type-btn" data-type="https">HTTPS</button>
+      <button class="type-btn" data-type="socks4">SOCKS4</button>
+      <button class="type-btn" data-type="socks5">SOCKS5</button>
+    </div>
+
+    <!-- Host + Port -->
+    <div class="field-row">
+      <div class="field">
+        <label>Proxy Host</label>
+        <input type="text" id="proxy-host" placeholder="e.g. 192.168.1.1 or proxy.host.com" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="field port-field">
+        <label>Port</label>
+        <input type="number" id="proxy-port" placeholder="1080" min="1" max="65535" />
+      </div>
+    </div>
+
+    <!-- Auth (optional) -->
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span>Auth (optional)</span>
+      <div class="divider-line"></div>
+    </div>
+    <div class="field-row half">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="proxy-user" placeholder="username" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="proxy-pass" placeholder="••••••••" autocomplete="off" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Leak Prevention -->
+  <div class="section">
+    <div class="section-label">Leak Prevention</div>
+    <div class="leak-grid">
+      <div class="leak-item enabled" data-key="webrtc">
+        <div class="leak-info">
+          <div class="leak-name">WebRTC</div>
+          <div class="leak-desc">Block real IP leaks</div>
+        </div>
+        <div class="leak-check">✓</div>
+      </div>
+      <div class="leak-item enabled" data-key="dnsPrefetch">
+        <div class="leak-info">
+          <div class="leak-name">DNS Prefetch</div>
+          <div class="leak-desc">Stop pre-resolving</div>
+        </div>
+        <div class="leak-check">✓</div>
+      </div>
+      <div class="leak-item enabled" data-key="proxyDns">
+        <div class="leak-info">
+          <div class="leak-name">Remote DNS</div>
+          <div class="leak-desc">SOCKS5 proxy DNS</div>
+        </div>
+        <div class="leak-check">✓</div>
+      </div>
+      <div class="leak-item enabled" data-key="blockUdp">
+        <div class="leak-info">
+          <div class="leak-name">Referrers</div>
+          <div class="leak-desc">Block referrer leak</div>
+        </div>
+        <div class="leak-check">✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" id="btn-save">Save & Apply</button>
+    <button class="btn btn-secondary" id="btn-test">Test Config</button>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="#" id="options-link">⚙ Profiles & Options</a>
+    <span class="version-tag">v1.0.0</span>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="src/popup.js"></script>
+</body>
+</html>

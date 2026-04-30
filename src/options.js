@@ -1,216 +1,164 @@
-// ProxyShield - Options Script
+// ProxyShield Options v1.1.0
 
-let settings = null;
-let editingProfileId = null;
-
-const ICONS = { http: '🌐', https: '🔒', socks4: '🔷', socks5: '🔵' };
+let _s = null;
+let _editing = null;
+const ICONS = { http:'🌐', https:'🔒', socks4:'🔷', socks5:'🔵' };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadSettings();
-  bindEvents();
+  const res = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
+  if (res.success) { _s = res.settings; renderProfiles(); prefillForm(); }
+  bindAll();
 });
 
-async function loadSettings() {
-  const res = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
-  if (res.success) {
-    settings = res.settings;
-    renderProfiles();
-    populateFormFromSettings();
-  }
-}
-
-// ─── Profiles ─────────────────────────────────────────────────────────────────
+// ── Profiles ──────────────────────────────────────────────────────────────────
 
 function renderProfiles() {
-  const list = document.getElementById('profile-list');
-  const profiles = settings.profiles || [];
-
-  if (profiles.length === 0) {
-    list.innerHTML = `<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:20px 0;">No saved profiles yet</div>`;
+  const list = document.getElementById('plist');
+  const ps = _s.profiles || [];
+  if (!ps.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:20px 0">No saved profiles</div>';
     return;
   }
+  list.innerHTML = ps.map(p => `
+    <div role="listitem" style="display:flex;gap:6px;align-items:center;">
+      <button class="pitem${_editing === p.id ? ' active' : ''}" data-id="${p.id}" aria-label="Edit ${esc(p.name)}">
+        <div class="pico2">${ICONS[p.proxy.type]||'🌐'}</div>
+        <div class="pinfo">
+          <div class="pname">${esc(p.name||'Unnamed')}</div>
+          <div class="pmeta">${p.proxy.type.toUpperCase()} · ${esc(p.proxy.host)}:${esc(p.proxy.port)}</div>
+        </div>
+      </button>
+      <button class="pdel" data-del="${p.id}" aria-label="Delete ${esc(p.name)}">✕</button>
+    </div>`).join('');
 
-  list.innerHTML = profiles.map(p => `
-    <div class="profile-item ${editingProfileId === p.id ? 'active' : ''}" data-id="${p.id}">
-      <div class="profile-icon">${ICONS[p.proxy.type] || '🌐'}</div>
-      <div class="profile-info">
-        <div class="profile-name">${escHtml(p.name || 'Unnamed')}</div>
-        <div class="profile-meta">${p.proxy.type.toUpperCase()} · ${escHtml(p.proxy.host)}:${escHtml(p.proxy.port)}</div>
-      </div>
-      <div class="profile-del" data-del="${p.id}" title="Delete">✕</div>
-    </div>
-  `).join('');
-
-  // Click to edit
-  list.querySelectorAll('.profile-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.classList.contains('profile-del')) return;
-      loadProfileIntoForm(item.dataset.id);
-    });
-  });
-
-  // Delete
-  list.querySelectorAll('.profile-del').forEach(btn => {
-    btn.addEventListener('click', () => deleteProfile(btn.dataset.del));
-  });
+  list.querySelectorAll('.pitem').forEach(b => b.addEventListener('click', () => loadProfile(b.dataset.id)));
+  list.querySelectorAll('.pdel').forEach(b => b.addEventListener('click', () => deleteProfile(b.dataset.del)));
 }
 
-function loadProfileIntoForm(id) {
-  const profile = (settings.profiles || []).find(p => p.id === id);
-  if (!profile) return;
-
-  editingProfileId = id;
-  document.getElementById('form-title').textContent = 'Edit Profile';
-  document.getElementById('f-name').value = profile.name || '';
-  document.getElementById('f-host').value = profile.proxy.host || '';
-  document.getElementById('f-port').value = profile.proxy.port || '';
-  document.getElementById('f-type').value = profile.proxy.type || 'http';
-  document.getElementById('f-user').value = profile.proxy.username || '';
-  document.getElementById('f-pass').value = profile.proxy.password || '';
-
-  const lp = profile.leakPrevention || {};
-  document.querySelectorAll('.opt-row').forEach(row => {
-    const key = row.dataset.opt;
-    const checked = lp[key] !== false;
-    row.classList.toggle('checked', checked);
-    row.querySelector('.opt-cb').textContent = checked ? '✓' : '';
+function loadProfile(id) {
+  const p = (_s.profiles||[]).find(p => p.id === id);
+  if (!p) return;
+  _editing = id;
+  document.getElementById('ftitle').textContent = 'Edit Profile';
+  document.getElementById('f-name').value = p.name || '';
+  document.getElementById('f-host').value = p.proxy.host || '';
+  document.getElementById('f-port').value = p.proxy.port || '';
+  document.getElementById('f-type').value = p.proxy.type || 'http';
+  document.getElementById('f-user').value = p.proxy.username || '';
+  document.getElementById('f-pass').value = p.proxy.password || '';
+  const lp = p.leakPrevention || {};
+  document.querySelectorAll('.orow').forEach(r => {
+    const on = lp[r.dataset.opt] !== false;
+    r.setAttribute('aria-pressed', String(on));
+    r.querySelector('.ocb').textContent = on ? '✓' : '';
   });
-
   renderProfiles();
 }
 
-function populateFormFromSettings() {
-  // Pre-fill from current active settings
-  if (settings.proxy.host) {
-    document.getElementById('f-host').value = settings.proxy.host;
-    document.getElementById('f-port').value = settings.proxy.port;
-    document.getElementById('f-type').value = settings.proxy.type || 'http';
-    document.getElementById('f-user').value = settings.proxy.username || '';
-  }
+function prefillForm() {
+  if (!_s.proxy.host) return;
+  document.getElementById('f-host').value = _s.proxy.host;
+  document.getElementById('f-port').value = _s.proxy.port;
+  document.getElementById('f-type').value = _s.proxy.type || 'http';
+  document.getElementById('f-user').value = _s.proxy.username || '';
 }
 
 async function deleteProfile(id) {
-  settings.profiles = (settings.profiles || []).filter(p => p.id !== id);
-  if (editingProfileId === id) {
-    editingProfileId = null;
-    clearForm();
-  }
-  await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings });
+  _s.profiles = (_s.profiles||[]).filter(p => p.id !== id);
+  if (_editing === id) { _editing = null; clearForm(); }
+  await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: _s });
   renderProfiles();
   showToast('Profile deleted');
 }
 
-// ─── Form ─────────────────────────────────────────────────────────────────────
+// ── Form ──────────────────────────────────────────────────────────────────────
 
-function bindEvents() {
-  // Opt-row toggles
-  document.querySelectorAll('.opt-row').forEach(row => {
-    row.addEventListener('click', () => {
-      row.classList.toggle('checked');
-      row.querySelector('.opt-cb').textContent = row.classList.contains('checked') ? '✓' : '';
+function bindAll() {
+  document.querySelectorAll('.orow').forEach(r => {
+    r.addEventListener('click', () => {
+      const on = r.getAttribute('aria-pressed') !== 'true';
+      r.setAttribute('aria-pressed', String(on));
+      r.querySelector('.ocb').textContent = on ? '✓' : '';
     });
   });
-
-  document.getElementById('btn-new-profile').addEventListener('click', () => {
-    editingProfileId = null;
-    clearForm();
-    document.getElementById('form-title').textContent = 'New Profile';
+  document.getElementById('btn-new').addEventListener('click', () => {
+    _editing = null; clearForm();
+    document.getElementById('ftitle').textContent = 'New Profile';
     renderProfiles();
   });
-
-  document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
-  document.getElementById('btn-apply-now').addEventListener('click', applyNow);
-  document.getElementById('btn-clear-form').addEventListener('click', clearForm);
+  document.getElementById('btn-save').addEventListener('click', saveProfile);
+  document.getElementById('btn-apply').addEventListener('click', applyNow);
+  document.getElementById('btn-clear').addEventListener('click', clearForm);
 }
 
-function getFormData() {
-  const leakPrevention = {};
-  document.querySelectorAll('.opt-row').forEach(row => {
-    leakPrevention[row.dataset.opt] = row.classList.contains('checked');
+function formData() {
+  const lp = {};
+  document.querySelectorAll('.orow').forEach(r => {
+    lp[r.dataset.opt] = r.getAttribute('aria-pressed') === 'true';
   });
-
   return {
     name: document.getElementById('f-name').value.trim() || 'Unnamed',
     proxy: {
-      type: document.getElementById('f-type').value,
-      host: document.getElementById('f-host').value.trim(),
-      port: document.getElementById('f-port').value.trim(),
+      type:     document.getElementById('f-type').value,
+      host:     document.getElementById('f-host').value.trim(),
+      port:     document.getElementById('f-port').value.trim(),
       username: document.getElementById('f-user').value,
       password: document.getElementById('f-pass').value
     },
-    leakPrevention
+    leakPrevention: lp
   };
 }
 
 async function saveProfile() {
-  const data = getFormData();
-
-  if (!data.proxy.host) { showToast('Host is required', 'error'); return; }
-  if (!data.proxy.port) { showToast('Port is required', 'error'); return; }
-
-  if (!settings.profiles) settings.profiles = [];
-
-  if (editingProfileId) {
-    const idx = settings.profiles.findIndex(p => p.id === editingProfileId);
-    if (idx !== -1) {
-      settings.profiles[idx] = { ...settings.profiles[idx], ...data };
-    }
+  const d = formData();
+  if (!d.proxy.host) { showToast('Host is required', 'err'); return; }
+  if (!d.proxy.port) { showToast('Port is required', 'err'); return; }
+  if (!_s.profiles) _s.profiles = [];
+  if (_editing) {
+    const i = _s.profiles.findIndex(p => p.id === _editing);
+    if (i !== -1) _s.profiles[i] = { ..._s.profiles[i], ...d };
   } else {
-    settings.profiles.push({ id: Date.now().toString(), ...data });
+    _s.profiles.push({ id: Date.now().toString(), ...d });
   }
-
-  await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings });
+  await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: _s });
   renderProfiles();
-  showToast('✓ Profile saved', 'success');
+  showToast('✓ Profile saved', 'ok');
 }
 
 async function applyNow() {
-  const data = getFormData();
-
-  if (!data.proxy.host) { showToast('Host is required', 'error'); return; }
-  if (!data.proxy.port) { showToast('Port is required', 'error'); return; }
-
-  settings.proxy = data.proxy;
-  settings.leakPrevention = data.leakPrevention;
-
-  const res = await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings });
-
-  if (res.success) {
-    if (settings.enabled) {
-      showToast('✓ Proxy updated and applied', 'success');
-    } else {
-      showToast('✓ Saved — enable proxy in popup to activate', 'success');
-    }
-  } else {
-    showToast('Failed to apply', 'error');
-  }
+  const d = formData();
+  if (!d.proxy.host) { showToast('Host is required', 'err'); return; }
+  if (!d.proxy.port) { showToast('Port is required', 'err'); return; }
+  _s.proxy = d.proxy;
+  _s.leakPrevention = d.leakPrevention;
+  const res = await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: _s });
+  showToast(res.success
+    ? (_s.enabled ? '✓ Proxy updated' : '✓ Saved — enable in popup')
+    : (res.error || 'Failed'), res.success ? 'ok' : 'err');
 }
 
 function clearForm() {
-  editingProfileId = null;
-  ['f-name','f-host','f-port','f-user','f-pass'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  _editing = null;
+  ['f-name','f-host','f-port','f-user','f-pass'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-type').value = 'http';
-  document.querySelectorAll('.opt-row').forEach(row => {
-    row.classList.add('checked');
-    row.querySelector('.opt-cb').textContent = '✓';
+  document.querySelectorAll('.orow').forEach(r => {
+    r.setAttribute('aria-pressed', 'true');
+    r.querySelector('.ocb').textContent = '✓';
   });
-  document.getElementById('form-title').textContent = 'Configure Proxy';
+  document.getElementById('ftitle').textContent = 'Configure Proxy';
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function escHtml(str) {
-  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-let toastTimer = null;
-
-function showToast(msg, type = '') {
+let _tt;
+function showToast(msg, cls = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = `toast ${type} show`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  t.className = `toast show ${cls}`;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove('show'), 2800);
 }

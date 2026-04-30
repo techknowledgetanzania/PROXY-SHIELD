@@ -1,214 +1,178 @@
-// ProxyShield - Popup Script
+// ProxyShield Popup v1.1.0
 
-let settings = null;
-let selectedType = 'http';
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
+let _settings = null;
+let _type = 'http';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadSettings();
-  bindEvents();
+  const res = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
+  if (res.success) { _settings = res.settings; render(_settings); }
+  else showToast('Failed to load settings', 'err');
+  bindAll();
 });
 
-async function loadSettings() {
-  try {
-    const res = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
-    if (res.success) {
-      settings = res.settings;
-      populateUI(settings);
-    }
-  } catch (e) {
-    showToast('Failed to load settings', 'error');
-  }
-}
+// ── Render ────────────────────────────────────────────────────────────────────
 
-function populateUI(s) {
-  // Toggle state
-  const toggle = document.getElementById('master-toggle');
-  toggle.checked = s.enabled;
-  updateToggleLabel(s.enabled);
-  updateStatusBar(s);
+function render(s) {
+  // Toggle
+  const chk = document.getElementById('master');
+  chk.checked = s.enabled;
+  chk.setAttribute('aria-checked', String(s.enabled));
+  setToggleLabel(s.enabled);
+  setStatus(s);
 
   // Proxy fields
-  selectedType = s.proxy.type || 'http';
-  document.getElementById('proxy-host').value = s.proxy.host || '';
-  document.getElementById('proxy-port').value = s.proxy.port || '';
-  document.getElementById('proxy-user').value = s.proxy.username || '';
-  document.getElementById('proxy-pass').value = s.proxy.password || '';
+  _type = s.proxy.type || 'http';
+  document.getElementById('host').value = s.proxy.host     || '';
+  document.getElementById('port').value = s.proxy.port     || '';
+  document.getElementById('user').value = s.proxy.username || '';
+  document.getElementById('pass').value = s.proxy.password || '';
 
-  // Type buttons
-  document.querySelectorAll('.type-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.type === selectedType);
-  });
-
-  // Leak prevention
-  const lp = s.leakPrevention;
-  document.querySelectorAll('.leak-item').forEach(item => {
-    const key = item.dataset.key;
-    const enabled = lp[key] !== false;
-    item.classList.toggle('enabled', enabled);
-    item.querySelector('.leak-check').textContent = enabled ? '✓' : '';
-  });
-}
-
-// ─── Events ───────────────────────────────────────────────────────────────────
-
-function bindEvents() {
-  // Master toggle
-  document.getElementById('master-toggle').addEventListener('change', async (e) => {
-    const enabled = e.target.checked;
-    updateToggleLabel(enabled);
-
-    const res = await chrome.runtime.sendMessage({ type: 'TOGGLE_PROXY', enabled });
-
-    if (res.success) {
-      settings.enabled = enabled;
-      updateStatusBar(settings);
-      showToast(enabled ? '🛡 Proxy activated' : 'Proxy disabled', enabled ? 'success' : '');
-    } else {
-      e.target.checked = !enabled;
-      updateToggleLabel(!enabled);
-      showToast(res.error || 'Failed to toggle proxy', 'error');
-    }
-  });
-
-  // Type buttons
-  document.querySelectorAll('.type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedType = btn.dataset.type;
-      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
+  // Protocol buttons
+  document.querySelectorAll('.pt').forEach(b => {
+    const active = b.dataset.type === _type;
+    b.classList.toggle('on', active);
+    b.setAttribute('aria-pressed', String(active));
   });
 
   // Leak prevention toggles
-  document.querySelectorAll('.leak-item').forEach(item => {
-    item.addEventListener('click', () => {
-      item.classList.toggle('enabled');
-      const enabled = item.classList.contains('enabled');
-      item.querySelector('.leak-check').textContent = enabled ? '✓' : '';
+  const lp = s.leakPrevention;
+  document.querySelectorAll('.li').forEach(btn => {
+    const on = lp[btn.dataset.key] !== false;
+    btn.setAttribute('aria-pressed', String(on));
+    btn.querySelector('.lck').textContent = on ? '✓' : '';
+  });
+}
+
+// ── Bind events ───────────────────────────────────────────────────────────────
+
+function bindAll() {
+  // Master toggle
+  document.getElementById('master').addEventListener('change', async e => {
+    const on = e.target.checked;
+    setToggleLabel(on);
+    const res = await chrome.runtime.sendMessage({ type: 'TOGGLE_PROXY', enabled: on });
+    if (res.success) {
+      _settings.enabled = on;
+      setStatus(_settings);
+      showToast(on ? '🛡 Proxy active' : 'Proxy disabled', on ? 'ok' : '');
+    } else {
+      e.target.checked = !on;
+      e.target.setAttribute('aria-checked', String(!on));
+      setToggleLabel(!on);
+      showToast(res.error || 'Toggle failed', 'err');
+    }
+  });
+
+  // Protocol buttons
+  document.querySelectorAll('.pt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _type = btn.dataset.type;
+      document.querySelectorAll('.pt').forEach(b => {
+        b.classList.toggle('on', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
     });
   });
 
-  // Save button
+  // Leak prevention buttons — real <button> elements, keyboard-accessible
+  document.querySelectorAll('.li').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const on = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(on));
+      btn.querySelector('.lck').textContent = on ? '✓' : '';
+    });
+  });
+
   document.getElementById('btn-save').addEventListener('click', saveAndApply);
-
-  // Test button
-  document.getElementById('btn-test').addEventListener('click', testConfig);
-
-  // Options link
-  document.getElementById('options-link').addEventListener('click', (e) => {
+  document.getElementById('btn-validate').addEventListener('click', validateConfig);
+  document.getElementById('opts').addEventListener('click', e => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();
   });
 }
 
-// ─── Save ─────────────────────────────────────────────────────────────────────
+// ── Save ──────────────────────────────────────────────────────────────────────
 
 async function saveAndApply() {
-  const host = document.getElementById('proxy-host').value.trim();
-  const port = document.getElementById('proxy-port').value.trim();
+  const host = document.getElementById('host').value.trim();
+  const port = document.getElementById('port').value.trim();
+  if (!host) { showToast('Host is required', 'err'); return; }
+  if (!port) { showToast('Port is required', 'err'); return; }
 
-  if (!host) { showToast('Host is required', 'error'); return; }
-  if (!port)  { showToast('Port is required', 'error'); return; }
-
-  // Collect leak prevention state
-  const leakPrevention = {};
-  document.querySelectorAll('.leak-item').forEach(item => {
-    leakPrevention[item.dataset.key] = item.classList.contains('enabled');
+  const lp = {};
+  document.querySelectorAll('.li').forEach(btn => {
+    lp[btn.dataset.key] = btn.getAttribute('aria-pressed') === 'true';
   });
 
-  const newSettings = {
-    ...settings,
+  const next = {
+    ..._settings,
     proxy: {
-      type: selectedType,
-      host,
-      port,
-      username: document.getElementById('proxy-user').value,
-      password: document.getElementById('proxy-pass').value
+      type: _type, host, port,
+      username: document.getElementById('user').value,
+      password: document.getElementById('pass').value
     },
-    leakPrevention
+    leakPrevention: lp
   };
 
   const btn = document.getElementById('btn-save');
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const res = await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: next });
+  btn.disabled = false; btn.textContent = 'Save & Apply';
 
-  const res = await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: newSettings });
-
-  btn.disabled = false;
-  btn.textContent = 'Save & Apply';
-
-  if (res.success) {
-    settings = newSettings;
-    updateStatusBar(settings);
-    showToast('✓ Settings saved', 'success');
-  } else {
-    showToast(res.error || 'Save failed', 'error');
-  }
+  if (res.success) { _settings = next; setStatus(_settings); showToast('✓ Saved', 'ok'); }
+  else showToast(res.error || 'Save failed', 'err');
 }
 
-// ─── Test ─────────────────────────────────────────────────────────────────────
+// ── FIX 4: Validate — inline result box, honest label ─────────────────────────
 
-async function testConfig() {
+async function validateConfig() {
   const proxy = {
-    type: selectedType,
-    host: document.getElementById('proxy-host').value.trim(),
-    port: document.getElementById('proxy-port').value.trim()
+    type: _type,
+    host: document.getElementById('host').value.trim(),
+    port: document.getElementById('port').value.trim()
   };
 
-  const btn = document.getElementById('btn-test');
-  btn.disabled = true;
-  btn.textContent = 'Testing…';
+  const btn = document.getElementById('btn-validate');
+  btn.disabled = true; btn.textContent = 'Checking…';
+  const res = await chrome.runtime.sendMessage({ type: 'VALIDATE_CONFIG', proxy });
+  btn.disabled = false; btn.textContent = 'Validate Config';
 
-  const res = await chrome.runtime.sendMessage({ type: 'TEST_PROXY', proxy });
-
-  btn.disabled = false;
-  btn.textContent = 'Test Config';
-
+  const box = document.getElementById('val-box');
   if (res.success) {
-    showToast('✓ Config valid — apply & visit ip-check.info', 'success');
+    box.className = 'val-box ok';
+    box.textContent = `✓ Format valid — save & enable, then visit ipleak.net to confirm connectivity.`;
   } else {
-    showToast(res.error, 'error');
+    box.className = 'val-box err';
+    box.textContent = `✗ ${res.error}`;
   }
 }
 
-// ─── UI Helpers ───────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function updateToggleLabel(enabled) {
-  const label = document.getElementById('toggle-state-label');
-  label.textContent = enabled ? 'ON' : 'OFF';
-  label.style.color = enabled ? 'var(--accent)' : 'var(--text-muted)';
+function setToggleLabel(on) {
+  const el = document.getElementById('tl');
+  el.textContent = on ? 'ON' : 'OFF';
+  el.style.color = on ? 'var(--accent)' : 'var(--muted)';
 }
 
-function updateStatusBar(s) {
-  const bar = document.getElementById('status-bar');
-  const text = document.getElementById('status-text');
-
-  bar.className = 'status-bar';
-
-  if (!s.proxy.host) {
-    text.textContent = 'No proxy configured';
-    return;
-  }
-
+function setStatus(s) {
+  const bar = document.getElementById('status');
+  const txt = document.getElementById('stxt');
+  bar.className = 'status';
+  if (!s.proxy.host) { txt.textContent = 'No proxy configured'; return; }
   if (s.enabled) {
-    bar.classList.add('active');
-    text.textContent = `${s.proxy.type.toUpperCase()} → ${s.proxy.host}:${s.proxy.port}`;
+    bar.classList.add('on');
+    txt.textContent = `${s.proxy.type.toUpperCase()} → ${s.proxy.host}:${s.proxy.port}`;
   } else {
-    text.textContent = `${s.proxy.type.toUpperCase()} ${s.proxy.host}:${s.proxy.port} (inactive)`;
+    txt.textContent = `${s.proxy.type.toUpperCase()} ${s.proxy.host}:${s.proxy.port} (inactive)`;
   }
 }
 
-let toastTimer = null;
-
-function showToast(message, type = '') {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.className = `toast ${type} show`;
-
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 2800);
+let _tt;
+function showToast(msg, cls = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${cls}`;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove('show'), 2800);
 }

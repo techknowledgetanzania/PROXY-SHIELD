@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "ProxyShield",
-  "version": "1.0.0",
-  "description": "Advanced proxy manager with DNS leak prevention. Supports HTTP, HTTPS, SOCKS4, and SOCKS5 proxies.",
+  "version": "1.1.0",
+  "description": "Advanced proxy manager with DNS leak prevention. Supports HTTP, HTTPS, SOCKS4, and SOCKS5.",
   "permissions": [
     "proxy",
     "storage",
     "privacy",
     "webRequest",
-    "tabs"
+    "webRequestAuthProvider"
   ],
   "host_permissions": [
     "<all_urls>"

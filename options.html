@@ -2,436 +2,164 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ProxyShield — Options</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- FIX 6: local fonts, no Google Fonts -->
+  <link rel="stylesheet" href="fonts/fonts.css" />
   <style>
     :root {
-      --bg:         #0a0c10;
-      --surface:    #111318;
-      --surface2:   #181c24;
-      --border:     #1e2330;
-      --border2:    #2a3045;
-      --accent:     #00c896;
-      --accent-dim: #00c89618;
-      --danger:     #ff4757;
-      --warn:       #ffa502;
-      --text:       #e8eaf0;
-      --text-muted: #6b7590;
-      --text-dim:   #3d4560;
-      --mono:       'JetBrains Mono', monospace;
-      --sans:       'Space Grotesk', sans-serif;
-      --radius:     8px;
+      --bg:#0a0c10; --surface:#111318; --surface2:#181c24;
+      --border:#1e2330; --border2:#2a3045;
+      --accent:#00c896; --accent-d:#00c89618;
+      --danger:#ff4757;
+      --text:#e8eaf0; --muted:#6b7590; --dim:#3d4560;
+      --mono:'JetBrains Mono',monospace; --sans:'Space Grotesk',sans-serif; --r:8px;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 40px;
-    }
-
-    .page-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 40px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .page-icon {
-      font-size: 28px;
-      width: 52px;
-      height: 52px;
-      background: var(--accent-dim);
-      border: 1px solid var(--accent);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    h1 {
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 3px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 24px;
-      max-width: 900px;
-    }
-
-    /* ── Card ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-    }
-
-    .card-title {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    /* ── Profiles ── */
-    .profile-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-
-    .profile-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.18s;
-    }
-
-    .profile-item:hover { border-color: var(--border2); }
-
-    .profile-item.active {
-      border-color: var(--accent);
-      background: var(--accent-dim);
-    }
-
-    .profile-icon {
-      font-size: 14px;
-      width: 28px;
-      height: 28px;
-      background: var(--border);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .profile-info { flex: 1; min-width: 0; }
-
-    .profile-name {
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .profile-meta {
-      font-size: 10px;
-      color: var(--text-muted);
-      font-family: var(--mono);
-      margin-top: 2px;
-    }
-
-    .profile-del {
-      font-size: 14px;
-      color: var(--text-dim);
-      cursor: pointer;
-      padding: 2px 6px;
-      border-radius: 4px;
-      transition: all 0.18s;
-    }
-
-    .profile-del:hover { color: var(--danger); background: #ff475715; }
-
-    /* ── Form ── */
-    .form-grid { display: grid; gap: 14px; }
-
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-row.single { grid-template-columns: 1fr; }
-    .form-row.three { grid-template-columns: 2fr 1fr 1fr; }
-
-    .form-field { display: flex; flex-direction: column; gap: 5px; }
-
-    .form-field label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-    }
-
-    .form-field input, .form-field select {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 9px 12px;
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 12px;
-      outline: none;
-      transition: border-color 0.18s;
-    }
-
-    .form-field input:focus, .form-field select:focus {
-      border-color: var(--accent);
-    }
-
-    .form-field input::placeholder { color: var(--text-dim); }
-
-    .form-field select option { background: var(--surface2); }
-
-    /* ── Leak Options ── */
-    .leak-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-
-    .opt-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 12px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.18s;
-    }
-
-    .opt-row:hover { border-color: var(--border2); }
-
-    .opt-cb {
-      width: 16px;
-      height: 16px;
-      border: 1px solid var(--border2);
-      border-radius: 4px;
-      flex-shrink: 0;
-      margin-top: 1px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      transition: all 0.18s;
-    }
-
-    .opt-row.checked .opt-cb {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #000;
-    }
-
-    .opt-row.checked { border-color: var(--accent); }
-
-    .opt-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .opt-desc {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 2px;
-      line-height: 1.4;
-    }
-
-    /* ── Buttons ── */
-    .btn-row { display: flex; gap: 8px; margin-top: 4px; }
-
-    .btn {
-      padding: 10px 16px;
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.18s;
-    }
-
-    .btn-primary { background: var(--accent); color: #000; }
-    .btn-primary:hover { background: #00e0ab; }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border2);
-    }
-
-    .btn-outline:hover { color: var(--text); border-color: var(--text-muted); }
-
-    .btn-sm { padding: 7px 12px; font-size: 11px; }
-    .btn-full { width: 100%; text-align: center; }
-
-    /* ── Status info ── */
-    .info-box {
-      background: var(--accent-dim);
-      border: 1px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 12px;
-      font-size: 11px;
-      color: var(--accent);
-      line-height: 1.6;
-      margin-top: 14px;
-    }
-
-    .info-box a { color: var(--accent); }
-
-    /* ── Toast ── */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: var(--radius);
-      padding: 10px 18px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text);
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.25s;
-      z-index: 100;
-    }
-
-    .toast.show { opacity: 1; transform: translateY(0); }
-    .toast.success { border-color: var(--accent); color: var(--accent); }
-    .toast.error { border-color: var(--danger); color: var(--danger); }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:40px;}
+    h1{font-size:22px;font-weight:700;}
+    .sub{font-size:13px;color:var(--muted);margin-top:3px;}
+    .phdr{display:flex;align-items:center;gap:16px;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+    .pico{font-size:28px;width:52px;height:52px;background:var(--accent-d);border:1px solid var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+    .layout{display:grid;grid-template-columns:280px 1fr;gap:24px;max-width:900px;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
+    .ctitle{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+    /* Profiles */
+    .plist{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+    .pitem{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .18s;text-align:left;font-family:var(--sans);width:100%;}
+    .pitem:hover{border-color:var(--border2);}
+    .pitem.active{border-color:var(--accent);background:var(--accent-d);}
+    .pitem:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+    .pico2{font-size:14px;width:28px;height:28px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .pinfo{flex:1;min-width:0;}
+    .pname{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pmeta{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;}
+    .pdel{font-size:14px;color:var(--dim);cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .18s;background:none;border:none;line-height:1;}
+    .pdel:hover{color:var(--danger);background:#ff475715;}
+    .pdel:focus-visible{outline:2px solid var(--danger);outline-offset:2px;}
+    /* Form */
+    .fgrid{display:grid;gap:14px;}
+    .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .frow.one{grid-template-columns:1fr;}
+    .frow.three{grid-template-columns:2fr 1fr 1fr;}
+    .ff{display:flex;flex-direction:column;gap:5px;}
+    .ff label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);}
+    .ff input,.ff select{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .18s;}
+    .ff input:focus,.ff select:focus{border-color:var(--accent);}
+    .ff input::placeholder{color:var(--dim);}
+    .ff select option{background:var(--surface2);}
+    /* FIX 3: leak options use correct key names, matching background.js */
+    .lopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
+    /* FIX 6: opt-rows are <button> for keyboard access */
+    .orow{display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .18s;text-align:left;font-family:var(--sans);width:100%;}
+    .orow:hover{border-color:var(--border2);}
+    .orow[aria-pressed="true"]{border-color:var(--accent);}
+    .orow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+    .ocb{width:16px;height:16px;border:1px solid var(--border2);border-radius:4px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .18s;}
+    .orow[aria-pressed="true"] .ocb{background:var(--accent);border-color:var(--accent);color:#000;}
+    .olbl{font-size:11px;font-weight:600;color:var(--text);}
+    .odsc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;}
+    /* Buttons */
+    .brow{display:flex;gap:8px;margin-top:4px;}
+    .btn{padding:10px 16px;border-radius:var(--r);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .18s;}
+    .btn-p{background:var(--accent);color:#000;}
+    .btn-p:hover{background:#00e0ab;}
+    .btn-o{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+    .btn-o:hover{color:var(--text);border-color:var(--muted);}
+    .btn-sm{padding:7px 12px;font-size:11px;}
+    .btn-full{width:100%;}
+    .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+    /* Info */
+    .info{background:var(--accent-d);border:1px solid var(--accent);border-radius:var(--r);padding:12px;font-size:11px;color:var(--accent);line-height:1.6;margin-top:14px;}
+    .info a{color:var(--accent);}
+    /* Toast */
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 18px;font-size:12px;font-weight:500;color:var(--text);opacity:0;transform:translateY(10px);transition:all .25s;z-index:100;}
+    .toast.show{opacity:1;transform:translateY(0);}
+    .toast.ok{border-color:var(--accent);color:var(--accent);}
+    .toast.err{border-color:var(--danger);color:var(--danger);}
   </style>
 </head>
 <body>
 
-  <div class="page-header">
-    <div class="page-icon">🛡</div>
-    <div>
-      <h1>ProxyShield Options</h1>
-      <div class="subtitle">Manage profiles, proxy settings, and DNS leak prevention</div>
+<div class="phdr">
+  <div class="pico" aria-hidden="true">🛡</div>
+  <div><h1>ProxyShield Options</h1><div class="sub">Manage profiles, proxy settings, and leak prevention</div></div>
+</div>
+
+<div class="layout">
+  <div>
+    <div class="card">
+      <div class="ctitle">Saved Profiles</div>
+      <div class="plist" id="plist" role="list"></div>
+      <button class="btn btn-o btn-sm btn-full" id="btn-new">+ New Profile</button>
+    </div>
+    <div class="info" style="margin-top:16px;">
+      <strong>Verify after enabling:</strong><br/>
+      <a href="https://ipleak.net" target="_blank" rel="noopener">ipleak.net</a> —
+      <a href="https://browserleaks.com/webrtc" target="_blank" rel="noopener">WebRTC leak test</a> —
+      <a href="https://dnsleaktest.com" target="_blank" rel="noopener">DNS leak test</a>
     </div>
   </div>
 
-  <div class="layout">
-
-    <!-- Left: Profiles -->
-    <div>
-      <div class="card">
-        <div class="card-title">Saved Profiles</div>
-        <div class="profile-list" id="profile-list">
-          <!-- populated by JS -->
+  <div>
+    <div class="card">
+      <div class="ctitle" id="ftitle">Configure Proxy</div>
+      <div class="fgrid">
+        <div class="frow one">
+          <div class="ff"><label for="f-name">Profile Name</label><input id="f-name" type="text" placeholder="e.g. Work VPN, US Server…" /></div>
         </div>
-        <button class="btn btn-outline btn-sm btn-full" id="btn-new-profile">+ New Profile</button>
-      </div>
-
-      <div class="info-box" style="margin-top: 16px;">
-        <strong>Verify your protection:</strong><br/>
-        After applying proxy, visit:
-        <a href="https://browserleaks.com/webrtc" target="_blank">browserleaks.com/webrtc</a><br/>
-        <a href="https://ipleak.net" target="_blank">ipleak.net</a><br/>
-        <a href="https://dnsleaktest.com" target="_blank">dnsleaktest.com</a>
-      </div>
-    </div>
-
-    <!-- Right: Edit / Create -->
-    <div>
-      <div class="card">
-        <div class="card-title" id="form-title">Configure Proxy</div>
-
-        <div class="form-grid">
-          <div class="form-row single">
-            <div class="form-field">
-              <label>Profile Name</label>
-              <input type="text" id="f-name" placeholder="e.g. Work VPN, US Server…" />
-            </div>
+        <div class="frow three">
+          <div class="ff"><label for="f-host">Host / IP</label><input id="f-host" type="text" placeholder="192.168.1.1 or proxy.example.com" spellcheck="false" /></div>
+          <div class="ff"><label for="f-port">Port</label><input id="f-port" type="number" placeholder="1080" min="1" max="65535" /></div>
+          <div class="ff">
+            <label for="f-type">Protocol</label>
+            <select id="f-type">
+              <option value="http">HTTP</option>
+              <option value="https">HTTPS</option>
+              <option value="socks4">SOCKS4</option>
+              <option value="socks5">SOCKS5</option>
+            </select>
           </div>
+        </div>
+        <div class="frow">
+          <div class="ff"><label for="f-user">Username (optional)</label><input id="f-user" type="text" placeholder="username" autocomplete="off" /></div>
+          <div class="ff"><label for="f-pass">Password (optional)</label><input id="f-pass" type="password" placeholder="••••••••" autocomplete="off" /></div>
+        </div>
 
-          <div class="form-row three">
-            <div class="form-field">
-              <label>Host / IP</label>
-              <input type="text" id="f-host" placeholder="192.168.1.1 or proxy.example.com" spellcheck="false" />
-            </div>
-            <div class="form-field">
-              <label>Port</label>
-              <input type="number" id="f-port" placeholder="1080" min="1" max="65535" />
-            </div>
-            <div class="form-field">
-              <label>Protocol</label>
-              <select id="f-type">
-                <option value="http">HTTP</option>
-                <option value="https">HTTPS</option>
-                <option value="socks4">SOCKS4</option>
-                <option value="socks5">SOCKS5</option>
-              </select>
-            </div>
+        <!-- FIX 3: data-opt keys match background.js exactly. proxyDns removed.
+             blockHyperlinkAudit and blockReferrers properly named and surfaced. -->
+        <div>
+          <div class="ctitle" style="margin-bottom:12px;">DNS &amp; Leak Prevention</div>
+          <div class="lopts">
+            <button class="orow" data-opt="webrtc" aria-pressed="true">
+              <div class="ocb" aria-hidden="true">✓</div>
+              <div><div class="olbl">Block WebRTC</div><div class="odsc">Prevent real-IP via WebRTC peers</div></div>
+            </button>
+            <button class="orow" data-opt="dnsPrefetch" aria-pressed="true">
+              <div class="ocb" aria-hidden="true">✓</div>
+              <div><div class="olbl">DNS Prefetch Off</div><div class="odsc">Stop Chrome pre-resolving via local DNS</div></div>
+            </button>
+            <button class="orow" data-opt="blockHyperlinkAudit" aria-pressed="true">
+              <div class="ocb" aria-hidden="true">✓</div>
+              <div><div class="olbl">Ping Audit Off</div><div class="odsc">Disable &lt;a ping&gt; background beacons</div></div>
+            </button>
+            <button class="orow" data-opt="blockReferrers" aria-pressed="true">
+              <div class="ocb" aria-hidden="true">✓</div>
+              <div><div class="olbl">No Referrers</div><div class="odsc">Stop sending Referer headers</div></div>
+            </button>
           </div>
+        </div>
 
-          <div class="form-row">
-            <div class="form-field">
-              <label>Username (optional)</label>
-              <input type="text" id="f-user" placeholder="username" autocomplete="off" />
-            </div>
-            <div class="form-field">
-              <label>Password (optional)</label>
-              <input type="password" id="f-pass" placeholder="••••••••" autocomplete="off" />
-            </div>
-          </div>
-
-          <!-- Leak Prevention -->
-          <div>
-            <div class="card-title" style="margin-bottom: 12px;">DNS & Leak Prevention</div>
-            <div class="leak-options">
-              <div class="opt-row checked" data-opt="webrtc">
-                <div class="opt-cb">✓</div>
-                <div>
-                  <div class="opt-label">Block WebRTC</div>
-                  <div class="opt-desc">Prevent real IP exposure via WebRTC peers</div>
-                </div>
-              </div>
-              <div class="opt-row checked" data-opt="dnsPrefetch">
-                <div class="opt-cb">✓</div>
-                <div>
-                  <div class="opt-label">DNS Prefetch Off</div>
-                  <div class="opt-desc">Stop Chrome pre-resolving domains with local DNS</div>
-                </div>
-              </div>
-              <div class="opt-row checked" data-opt="proxyDns">
-                <div class="opt-cb">✓</div>
-                <div>
-                  <div class="opt-label">Remote DNS (SOCKS5)</div>
-                  <div class="opt-desc">Resolve DNS on proxy server, not locally</div>
-                </div>
-              </div>
-              <div class="opt-row checked" data-opt="blockUdp">
-                <div class="opt-cb">✓</div>
-                <div>
-                  <div class="opt-label">Disable Referrers</div>
-                  <div class="opt-desc">Stop sending Referer headers to sites</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="btn-row">
-            <button class="btn btn-primary" id="btn-save-profile">Save Profile</button>
-            <button class="btn btn-outline" id="btn-apply-now">Apply Now</button>
-            <button class="btn btn-outline" id="btn-clear-form">Clear</button>
-          </div>
+        <div class="brow">
+          <button class="btn btn-p" id="btn-save">Save Profile</button>
+          <button class="btn btn-o" id="btn-apply">Apply Now</button>
+          <button class="btn btn-o" id="btn-clear">Clear</button>
         </div>
       </div>
     </div>
-
   </div>
+</div>
 
-  <div class="toast" id="toast"></div>
-
-  <script src="src/options.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="src/options.js"></script>
 </body>
 </html>
